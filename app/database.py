@@ -3,14 +3,6 @@ from sqlalchemy.orm import Session
 from db import SessionLocal, Image
 import math
 
-# Пример: три изображения с координатами и ссылками
-METADATA: List[Tuple[str, str, float, float, str]] = [
-    # (id, name,   lat,     lon,     url)
-    ("img001", "Eiffel Tower", 48.8584, 2.2945, "https://example.com/eiffel.jpg"),
-    ("img002", "Statue of Liberty", 40.6892, -74.0445, "https://example.com/liberty.jpg"),
-    ("img003", "Big Ben", 51.5007, -0.1246, "https://example.com/bigben.jpg"),
-]
-
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
