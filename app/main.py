@@ -76,5 +76,28 @@ async def nearby_endpoint(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+from fastapi import Query
+
+
+@app.get("/examples/nearby")
+async def examples_nearby(
+    lat: float = Query(..., ge=-90.0, le=90.0, description="Широта [-90, 90]"),
+    lon: float = Query(..., ge=-180.0, le=180.0, description="Долгота [-180, 180]"),
+    radius_km: float = Query(10.0, ge=0, le=10000, description="Радиус поиска (0–10000 км)")
+):
+    """
+    Возвращает изображения из базы, находящиеся в радиусе radius_km от заданной точки (lat, lon).
+    """
+    try:
+        center = (lat, lon)
+        matches = search_nearby(center, radius_km)
+        return {
+            "center": {"lat": lat, "lon": lon},
+            "matches": matches
+        }
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
