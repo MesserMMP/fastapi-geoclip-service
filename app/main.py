@@ -5,6 +5,7 @@ from database import search_nearby
 from model import load_model, predict_topk
 import uvicorn
 import tempfile
+from schemas import PredictResponse, NearbyResponse
 
 app = FastAPI(title="GeoCLIP API")
 
@@ -19,7 +20,7 @@ def on_startup():
 model = load_model()
 
 
-@app.post("/predict/coords")
+@app.post("/predict/coords", response_model=PredictResponse)
 async def coords_endpoint(file: UploadFile = File(...),
                           top_k: int = Query(1, ge=1, le=10,
                                              description="Количество координат (top-K)")):
@@ -51,7 +52,7 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/search/nearby")
+@app.post("/search/nearby", response_model=NearbyResponse)
 async def nearby_endpoint(
         file: UploadFile = File(...),
         radius_km: float = Query(10.0, ge=0, le=10000, description="Радиус поиска в километрах")
@@ -84,10 +85,7 @@ async def nearby_endpoint(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-from fastapi import Query
-
-
-@app.get("/examples/nearby")
+@app.get("/examples/nearby", response_model=NearbyResponse)
 async def examples_nearby(
         lat: float = Query(..., ge=-90.0, le=90.0, description="Широта [-90, 90]"),
         lon: float = Query(..., ge=-180.0, le=180.0, description="Долгота [-180, 180]"),
