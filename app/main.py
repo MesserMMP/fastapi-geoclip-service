@@ -1,10 +1,19 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from sqlalchemy.orm import Session
+from db import init_db, SessionLocal
 from database import search_nearby
 from model import load_model, predict_topk
 import uvicorn
 import tempfile
 
 app = FastAPI(title="GeoCLIP API")
+
+
+@app.on_event("startup")
+def on_startup():
+    # Создаём таблицы в БД при старте приложения
+    init_db()
+
 
 # Загружаем модель один раз при старте
 model = load_model()
@@ -27,14 +36,10 @@ async def coords_endpoint(file: UploadFile = File(...),
             coords, probs = predict_topk(model, tmp.name, top_k=top_k)
 
         # Гарантируем, что всё — Python float
-        response = []
-        for (lat, lon), p in zip(coords, probs):
-            response.append({
-                "lat": float(lat),
-                "lon": float(lon),
-                "prob": float(p)
-            })
-
+        response = [
+            {"lat": float(lat), "lon": float(lon), "prob": float(p)}
+            for (lat, lon), p in zip(coords, probs)
+        ]
         return {"predictions": response}
 
     except Exception as e:
@@ -66,8 +71,11 @@ async def nearby_endpoint(
             coords, _ = predict_topk(model, tmp.name, top_k=1)
             center = coords[0]
 
-        # Ищем по in-memory БД
-        matches = search_nearby(center, radius_km)
+        # Открываем сессию к БД
+        db: Session = SessionLocal()
+        matches = search_nearby(center, radius_km, db)
+        db.close()
+
         return {
             "center": {"lat": float(center[0]), "lon": float(center[1])},
             "matches": matches
@@ -81,16 +89,18 @@ from fastapi import Query
 
 @app.get("/examples/nearby")
 async def examples_nearby(
-    lat: float = Query(..., ge=-90.0, le=90.0, description="Широта [-90, 90]"),
-    lon: float = Query(..., ge=-180.0, le=180.0, description="Долгота [-180, 180]"),
-    radius_km: float = Query(10.0, ge=0, le=10000, description="Радиус поиска (0–10000 км)")
+        lat: float = Query(..., ge=-90.0, le=90.0, description="Широта [-90, 90]"),
+        lon: float = Query(..., ge=-180.0, le=180.0, description="Долгота [-180, 180]"),
+        radius_km: float = Query(10.0, ge=0, le=10000, description="Радиус поиска (0–10000 км)")
 ):
     """
     Возвращает изображения из базы, находящиеся в радиусе radius_km от заданной точки (lat, lon).
     """
     try:
         center = (lat, lon)
-        matches = search_nearby(center, radius_km)
+        db: Session = SessionLocal()
+        matches = search_nearby(center, radius_km, db)
+        db.close()
         return {
             "center": {"lat": lat, "lon": lon},
             "matches": matches

@@ -1,5 +1,7 @@
+from typing import List, Dict, Tuple
+from sqlalchemy.orm import Session
+from db import SessionLocal, Image
 import math
-from typing import List, Tuple, Dict
 
 # Пример: три изображения с координатами и ссылками
 METADATA: List[Tuple[str, str, float, float, str]] = [
@@ -24,22 +26,32 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return R * c
 
 
-def search_nearby(center: Tuple[float, float], radius_km: float) -> List[Dict]:
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def search_nearby(center: Tuple[float, float],
+                  radius_km: float,
+                  db: Session) -> List[Dict]:
     """
-    Ищет в METADATA все записи внутри radius_km от center (lat, lon).
+    Ищет в DB все записи внутри radius_km от center (lat, lon).
     Возвращает список словарей с полями id, lat, lon, url и distance_km.
     """
     lat0, lon0 = center
     results: List[Dict] = []
-    for img_id, name, lat, lon, url in METADATA:
-        dist = haversine(lat0, lon0, lat, lon)
+    for img in db.query(Image).all():
+        dist = haversine(lat0, lon0, img.lat, img.lon)
         if dist <= radius_km:
             results.append({
-                "id": img_id,
-                "name": name,
-                "lat": lat,
-                "lon": lon,
-                "url": url,
+                "id": img.id,
+                "name": img.name,
+                "lat": img.lat,
+                "lon": img.lon,
+                "url": img.url,
                 "distance_km": round(dist, 3)
             })
     results.sort(key=lambda x: x["distance_km"])
