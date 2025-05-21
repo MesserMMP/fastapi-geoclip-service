@@ -11,7 +11,9 @@ model = load_model()
 
 
 @app.post("/predict/coords")
-async def coords_endpoint(file: UploadFile = File(...), top_k: int = 1):
+async def coords_endpoint(file: UploadFile = File(...),
+                          top_k: int = Query(1, ge=1, le=10,
+                                             description="Количество координат (top-K)")):
     """
     Принимает изображение, возвращает топ-K координат и вероятностей.
     """
