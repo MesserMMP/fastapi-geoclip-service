@@ -1,2 +1,5 @@
 torch
 geoclip
+uvicorn
+fastapi
+python-multipart
