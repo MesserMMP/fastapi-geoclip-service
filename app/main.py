@@ -7,7 +7,23 @@ import uvicorn
 import tempfile
 from schemas import PredictResponse, NearbyResponse
 
-app = FastAPI(title="GeoCLIP API")
+app = FastAPI(
+    title="GeoCLIP API",
+    description="""
+GeoCLIP — API-сервис для геолокации по изображениям на основе модели CLIP.
+
+## Возможности:
+
+- 📍 Предсказание координат по изображению
+- 📷 Поиск похожих изображений в радиусе
+- 🧪 Примеры запросов
+    """,
+    openapi_tags=[
+        {"name": "Prediction", "description": "Эндпоинты для предсказания координат"},
+        {"name": "Search", "description": "Поиск изображений поблизости"},
+        {"name": "Examples", "description": "Примеры запросов"},
+    ]
+)
 
 
 @app.on_event("startup")
@@ -20,13 +36,21 @@ def on_startup():
 model = load_model()
 
 
-@app.post("/predict/coords", response_model=PredictResponse)
-async def coords_endpoint(file: UploadFile = File(...),
+@app.post(
+    "/predict/coords",
+    response_model=PredictResponse,
+    tags=["Prediction"],
+    summary="Предсказание координат",
+    description="""
+Принимает изображение и возвращает топ-K наиболее вероятных координат с вероятностями.
+
+- **top_k**: количество координат в ответе (от 1 до 10)
+- **file**: изображение (jpg/png)
+"""
+)
+async def coords_endpoint(file: UploadFile = File(...), description="Файл изображения (.jpg/.png)",
                           top_k: int = Query(1, ge=1, le=10,
                                              description="Количество координат (top-K)")):
-    """
-    Принимает изображение, возвращает топ-K координат и вероятностей.
-    """
     contents = await file.read()
     try:
         # Создаём временный файл, чтобы передать путь в predict_topk
@@ -47,20 +71,31 @@ async def coords_endpoint(file: UploadFile = File(...),
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    tags=["Examples"],
+    summary="Проверка работоспособности",
+    description="Простой health-check для проверки, что сервис живой."
+)
 def health():
     return {"status": "ok"}
 
 
-@app.post("/search/nearby", response_model=NearbyResponse)
+@app.post(
+    "/search/nearby",
+    response_model=NearbyResponse,
+    tags=["Search"],
+    summary="Поиск изображений поблизости от предсказанной точки",
+    description="""
+Принимает изображение и возвращает изображения из базы, находящиеся в радиусе от предсказанной координаты.
+
+- **radius_km**: радиус поиска в километрах
+"""
+)
 async def nearby_endpoint(
         file: UploadFile = File(...),
         radius_km: float = Query(10.0, ge=0, le=10000, description="Радиус поиска в километрах")
 ):
-    """
-    Принимает изображение, возвращает ближайшие из предзагруженной БД
-    изображения в радиусе radius_km км от предсказанной точки.
-    """
     contents = await file.read()
     try:
         # Временный файл для инференса
@@ -85,15 +120,24 @@ async def nearby_endpoint(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.get("/examples/nearby", response_model=NearbyResponse)
+@app.get(
+    "/examples/nearby",
+    response_model=NearbyResponse,
+    tags=["Examples"],
+    summary="Пример: Поиск из базы по координатам",
+    description="""
+Принимает координаты (lat, lon) и возвращает изображения поблизости из базы.
+
+- **lat**: широта [-90, 90]
+- **lon**: долгота [-180, 180]
+- **radius_km**: радиус поиска
+"""
+)
 async def examples_nearby(
         lat: float = Query(..., ge=-90.0, le=90.0, description="Широта [-90, 90]"),
         lon: float = Query(..., ge=-180.0, le=180.0, description="Долгота [-180, 180]"),
         radius_km: float = Query(10.0, ge=0, le=10000, description="Радиус поиска (0–10000 км)")
 ):
-    """
-    Возвращает изображения из базы, находящиеся в радиусе radius_km от заданной точки (lat, lon).
-    """
     try:
         center = (lat, lon)
         db: Session = SessionLocal()
