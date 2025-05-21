@@ -21,30 +21,41 @@ class PredictResponse(BaseModel):
 
 
 class Match(BaseModel):
-    id: int = Field(..., example=123)
+    id: str = Field(..., example="abc123")  # у тебя id — строка (Column(String))
+    name: str = Field(..., example="Eiffel Tower")
     lat: float = Field(..., example=48.8584)
     lon: float = Field(..., example=2.2945)
-    path: str = Field(..., example="/images/eiffel.jpg")
+    url: str = Field(..., example="https://example.com/images/eiffel.jpg")
+    distance_km: float = Field(..., example=0.123)
+
+
+class Сenter(BaseModel):
+    lat: float = Field(..., example=48.8584)
+    lon: float = Field(..., example=2.2945)
 
 
 class NearbyResponse(BaseModel):
-    center: CoordPrediction = Field(
-        ..., example={"lat": 48.8584, "lon": 2.2945, "prob": 0.85}
+    center: Сenter = Field(
+        ..., example={"lat": 48.8584, "lon": 2.2945}
     )
     matches: List[Match] = Field(
         ...,
         example=[
             {
-                "id": 123,
+                "id": "abc123",
+                "name": "Eiffel Tower",
                 "lat": 48.8584,
                 "lon": 2.2945,
-                "path": "/images/eiffel.jpg"
+                "url": "https://example.com/images/eiffel.jpg",
+                "distance_km": 0.123
             },
             {
-                "id": 124,
-                "lat": 48.8575,
-                "lon": 2.2950,
-                "path": "/images/eiffel2.jpg"
+                "id": "def456",
+                "name": "Louvre Museum",
+                "lat": 48.8606,
+                "lon": 2.3376,
+                "url": "https://example.com/images/louvre.jpg",
+                "distance_km": 2.145
             }
         ]
     )
