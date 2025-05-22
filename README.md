@@ -137,14 +137,17 @@
 
 ### Основные возможности
 
-* **Predict Coords**
+#### Predict Coords
   ![Predict Coords](./screenshots/predict_coords.png)
 
-* **Search Nearby**
-  ![Search Nearby](./screenshots/search_nearby.png)
+#### Search Nearby
+  ![Search Nearby](./screenshots/search_nearby1.png)
+  ![Search Nearby](./screenshots/search_nearby2.png)
+  ![Search Nearby](./screenshots/search_nearby3.png)
 
-* **Examples Nearby**
-  ![Examples Nearby](./screenshots/examples_nearby.png)
+#### Examples Nearby
+  ![Examples Nearby](./screenshots/examples_nearby1.png)
+  ![Examples Nearby](./screenshots/examples_nearby2.png)
 
 В каждой вкладке:
 
