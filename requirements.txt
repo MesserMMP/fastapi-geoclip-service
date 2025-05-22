@@ -5,3 +5,9 @@ fastapi
 python-multipart
 SQLAlchemy>=1.4
 psycopg2-binary
+streamlit
+pandas
+requests
+pillow
+folium
+streamlit-folium

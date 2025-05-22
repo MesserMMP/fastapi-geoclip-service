@@ -7,7 +7,6 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      # инициализация схемы и данных
       - ./docker/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   api:
@@ -19,5 +18,21 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # URL для SQLAlchemy
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  #
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "8501:8501"
+    # переопределяем команду на запуск streamlit
+    command: >
+      streamlit run app/frontend.py
+      --server.port 8501
+      --server.address 0.0.0.0
+    # указываем URL API, чтобы фронтенд знал, куда слать запросы
+    environment:
+      API_URL: http://api:8000
